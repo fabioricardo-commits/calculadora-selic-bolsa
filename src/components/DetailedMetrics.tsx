@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CalculationResult } from '../types';
-import { Table, Search, ChevronLeft, ChevronRight, Info, PieChart, Sparkles } from 'lucide-react';
+import { Table, Search, ChevronLeft, ChevronRight, PieChart, Sparkles, AlertTriangle } from 'lucide-react';
 
 interface DetailedMetricsProps {
   result: CalculationResult;
@@ -10,17 +10,12 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
   const [activeTab, setActiveTab] = useState<'comparison' | 'monthly'>('comparison');
   const [searchFilter, setSearchFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12; // 1 year per page
+  const itemsPerPage = 12;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
-  const formatPercent = (val: number) => {
-    return `${val.toFixed(2)}%`;
-  };
-
-  // Filter monthly data
   const filteredData = result.monthlyData.filter(
     (item) =>
       item.dateStr.toLowerCase().includes(searchFilter.toLowerCase()) ||
@@ -34,27 +29,27 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
   );
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl backdrop-blur-sm space-y-5">
-      {/* Tabs Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-2xl backdrop-blur-md space-y-5">
+      {/* Header Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('comparison')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
               activeTab === 'comparison'
                 ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
                 : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <PieChart className="w-4 h-4" />
-            Detalhamento Comparativo
+            Detalhamento da Carteira
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('monthly')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
               activeTab === 'monthly'
                 ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
                 : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
@@ -70,7 +65,7 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
             <input
               type="text"
-              placeholder="Filtrar por mês ou data..."
+              placeholder="Buscar mês ou ano..."
               value={searchFilter}
               onChange={(e) => {
                 setSearchFilter(e.target.value);
@@ -82,112 +77,91 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
         )}
       </div>
 
-      {/* Tab 1: Detailed Comparison */}
+      {/* Tab 1: Comparison */}
       {activeTab === 'comparison' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Selic Metrics Table */}
-            <div className="bg-slate-950/60 rounded-xl border border-sky-950/60 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="font-bold text-sm text-sky-400 flex items-center gap-2">
-                  Tesouro Selic
-                </span>
-                <span className="text-[11px] text-slate-400">Renda Fixa Pós-Fixada</span>
-              </div>
+          <div className="overflow-x-auto rounded-xl border border-slate-800">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th className="py-3 px-3">Ativo / Opção</th>
+                  <th className="py-3 px-3">Multiplicador</th>
+                  <th className="py-3 px-3">Total Investido</th>
+                  <th className="py-3 px-3">Saldo Bruto</th>
+                  <th className="py-3 px-3 text-rose-400">IR Estimado</th>
+                  <th className="py-3 px-3 text-emerald-400">Saldo Líquido</th>
+                  <th className="py-3 px-3">Retorno Líquido</th>
+                  <th className="py-3 px-3">CAGR (a.a.)</th>
+                  <th className="py-3 px-3 text-rose-400">Máx Drawdown</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800 bg-slate-900/40">
+                {/* Selic row */}
+                <tr className="hover:bg-slate-800/40 bg-sky-950/20">
+                  <td className="py-3 px-3 font-extrabold text-sky-400">Tesouro Selic</td>
+                  <td className="py-3 px-3 font-black text-amber-400">{result.selicMultiplier.toFixed(2)}x</td>
+                  <td className="py-3 px-3 font-medium">{formatCurrency(result.totalInvested)}</td>
+                  <td className="py-3 px-3 text-slate-300">{formatCurrency(result.selicGrossBalance)}</td>
+                  <td className="py-3 px-3 text-rose-400">-{formatCurrency(result.selicIrTax)}</td>
+                  <td className="py-3 px-3 font-black text-sky-300">{formatCurrency(result.selicNetBalance)}</td>
+                  <td className="py-3 px-3 font-bold text-emerald-400">+{result.selicNetReturnPercent.toFixed(2)}%</td>
+                  <td className="py-3 px-3">{result.selicCagrPercent.toFixed(2)}%</td>
+                  <td className="py-3 px-3 text-slate-500">0.0% (Zero)</td>
+                </tr>
 
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Total Investido (Aportes):</span>
-                  <span className="font-semibold text-white">{formatCurrency(result.totalInvested)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Saldo Bruto Final:</span>
-                  <span className="font-semibold text-sky-300">{formatCurrency(result.selicGrossBalance)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Rendimento Bruto:</span>
-                  <span className="font-semibold text-emerald-400">+{formatCurrency(result.selicGrossProfit)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Imposto de Renda (IR):</span>
-                  <span className="font-semibold text-rose-400">-{formatCurrency(result.selicIrTax)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400 font-bold">Saldo Líquido Final:</span>
-                  <span className="font-black text-sky-400 text-sm">{formatCurrency(result.selicNetBalance)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Rentabilidade Líquida Total:</span>
-                  <span className="font-semibold text-emerald-400">+{formatPercent(result.selicNetReturnPercent)}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400">Rentabilidade Anual (CAGR):</span>
-                  <span className="font-semibold text-sky-300">{formatPercent(result.selicCagrPercent)} a.a.</span>
-                </div>
-              </div>
-            </div>
+                {/* Combined Portfolio Row */}
+                {result.stockResults.length > 1 && (
+                  <tr className="hover:bg-slate-800/40 bg-purple-950/30 border-t-2 border-purple-500/40">
+                    <td className="py-3 px-3 font-black text-purple-400">Carteira Consolidada</td>
+                    <td className="py-3 px-3 font-black text-amber-400">{result.portfolioMultiplier.toFixed(2)}x</td>
+                    <td className="py-3 px-3 font-medium">{formatCurrency(result.totalInvested)}</td>
+                    <td className="py-3 px-3 text-slate-300">{formatCurrency(result.stockResults.reduce((a, s) => a + s.grossBalance, 0))}</td>
+                    <td className="py-3 px-3 text-rose-400">-{formatCurrency(result.stockResults.reduce((a, s) => a + s.irTax, 0))}</td>
+                    <td className="py-3 px-3 font-black text-purple-300">{formatCurrency(result.portfolioNetBalance)}</td>
+                    <td className={`py-3 px-3 font-bold ${result.portfolioNetReturnPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {result.portfolioNetReturnPercent >= 0 ? '+' : ''}{result.portfolioNetReturnPercent.toFixed(2)}%
+                    </td>
+                    <td className="py-3 px-3">{result.portfolioCagrPercent.toFixed(2)}%</td>
+                    <td className="py-3 px-3 text-slate-400">—</td>
+                  </tr>
+                )}
 
-            {/* Stock Metrics Table */}
-            <div className="bg-slate-950/60 rounded-xl border border-purple-950/60 p-4 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="font-bold text-sm text-purple-400 flex items-center gap-2">
-                  Ação {result.stockTicker}
-                </span>
-                <span className="text-[11px] text-slate-400">{result.stockName}</span>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Total Investido (Aportes):</span>
-                  <span className="font-semibold text-white">{formatCurrency(result.totalInvested)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Saldo Bruto Final:</span>
-                  <span className="font-semibold text-purple-300">{formatCurrency(result.stockGrossBalance)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Rendimento Bruto:</span>
-                  <span className="font-semibold text-emerald-400">+{formatCurrency(result.stockGrossProfit)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Imposto de Renda (IR Estimado):</span>
-                  <span className="font-semibold text-rose-400">-{formatCurrency(result.stockIrTax)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400 font-bold">Saldo Líquido Final:</span>
-                  <span className="font-black text-purple-400 text-sm">{formatCurrency(result.stockNetBalance)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-900">
-                  <span className="text-slate-400">Rentabilidade Líquida Total:</span>
-                  <span className={`font-semibold ${result.stockNetReturnPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    +{formatPercent(result.stockNetReturnPercent)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400">Rentabilidade Anual (CAGR):</span>
-                  <span className="font-semibold text-purple-300">{formatPercent(result.stockCagrPercent)} a.a.</span>
-                </div>
-              </div>
-            </div>
+                {/* Individual stocks rows */}
+                {result.stockResults.map((s) => (
+                  <tr key={s.ticker} className="hover:bg-slate-800/40">
+                    <td className="py-3 px-3 font-bold text-white flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: s.color }}></span>
+                      {s.ticker} <span className="text-[10px] text-slate-400 font-normal">({s.name})</span>
+                    </td>
+                    <td className="py-3 px-3 font-bold text-amber-400">{s.multiplier.toFixed(2)}x</td>
+                    <td className="py-3 px-3 text-slate-400">{formatCurrency(result.totalInvested / result.stockResults.length)}</td>
+                    <td className="py-3 px-3 text-slate-300">{formatCurrency(s.grossBalance)}</td>
+                    <td className="py-3 px-3 text-rose-400">-{formatCurrency(s.irTax)}</td>
+                    <td className="py-3 px-3 font-extrabold text-white">{formatCurrency(s.netBalance)}</td>
+                    <td className={`py-3 px-3 font-bold ${s.netReturnPercent >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {s.netReturnPercent >= 0 ? '+' : ''}{s.netReturnPercent.toFixed(2)}%
+                    </td>
+                    <td className="py-3 px-3">{s.cagrPercent.toFixed(2)}%</td>
+                    <td className="py-3 px-3 font-semibold text-rose-400">-{s.maxDrawdownPercent.toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          {/* Educational Insights Card */}
           <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-amber-400">
               <Sparkles className="w-4 h-4" />
-              Análise de Risco & Liquidez
+              Conceitos de Risco: Drawdown & Volatilidade Acadêmica
             </div>
             <p className="text-slate-300 leading-relaxed">
-              • <strong>Tesouro Selic:</strong> Oferece liquidez diária (D+1) com volatilidade próxima de zero e garantia soberana (baixo risco de crédito).
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              • <strong>Ações da Bolsa (B3):</strong> Possuem volatilidade e oscilação diária. A estratégia de aportes mensais (DCA - Dollar Cost Averaging) ajuda a suavizar o preço médio de aquisição ao longo dos anos.
+              • <strong>Max Drawdown:</strong> Representa a maior queda percentual do patrimônio desde o seu topo histórico até o fundo no período. Medida fundamental em finanças acadêmicas para avaliar o risco de cauda e tolerância do investidor.
             </p>
           </div>
         </div>
       )}
 
-      {/* Tab 2: Monthly Evolution Table */}
+      {/* Tab 2: Monthly Table */}
       {activeTab === 'monthly' && (
         <div className="space-y-4">
           <div className="overflow-x-auto rounded-xl border border-slate-800">
@@ -197,42 +171,45 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
                   <th className="py-3 px-3">Mês</th>
                   <th className="py-3 px-3">Data</th>
                   <th className="py-3 px-3">Total Investido</th>
-                  <th className="py-3 px-3 text-sky-400">Selic (%)</th>
-                  <th className="py-3 px-3 text-sky-400">Saldo Selic (Líquido)</th>
-                  <th className="py-3 px-3 text-purple-400">Retorno {result.stockTicker}</th>
-                  <th className="py-3 px-3 text-purple-400">Saldo {result.stockTicker} (Líquido)</th>
+                  <th className="py-3 px-3 text-sky-400">Saldo Selic</th>
+                  <th className="py-3 px-3 text-purple-400">Saldo Carteira</th>
+                  {result.stockResults.map((s) => (
+                    <th key={s.ticker} className="py-3 px-3" style={{ color: s.color }}>
+                      {s.ticker}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
                 {paginatedData.map((row) => (
-                  <tr key={row.monthIndex} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={row.monthIndex} className="hover:bg-slate-800/40">
                     <td className="py-2.5 px-3 font-semibold text-white">#{row.monthIndex}</td>
                     <td className="py-2.5 px-3 text-slate-400">{row.dateStr}</td>
                     <td className="py-2.5 px-3 font-medium text-slate-200">{formatCurrency(row.totalInvested)}</td>
-                    <td className="py-2.5 px-3 text-sky-300">{row.selicRateMonth.toFixed(2)}%</td>
-                    <td className="py-2.5 px-3 font-semibold text-sky-400">{formatCurrency(row.selicNetBalance)}</td>
-                    <td className={`py-2.5 px-3 font-medium ${row.stockMonthlyReturn >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {row.stockMonthlyReturn >= 0 ? '+' : ''}{row.stockMonthlyReturn.toFixed(2)}%
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-purple-400">{formatCurrency(row.stockNetBalance)}</td>
+                    <td className="py-2.5 px-3 font-bold text-sky-400">{formatCurrency(row.selicNetBalance)}</td>
+                    <td className="py-2.5 px-3 font-bold text-purple-400">{formatCurrency(row.portfolioNetBalance)}</td>
+                    {result.stockResults.map((s) => (
+                      <td key={s.ticker} className="py-2.5 px-3 font-semibold text-slate-200">
+                        {formatCurrency(row.stockBalances[s.ticker] ?? 0)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination Controls */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-slate-400">
-                Página {currentPage} de {totalPages} ({filteredData.length} registros)
+                Página {currentPage} de {totalPages} ({filteredData.length} meses)
               </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 disabled:opacity-40 hover:bg-slate-800"
+                  className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 disabled:opacity-40"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -240,7 +217,7 @@ export const DetailedMetrics: React.FC<DetailedMetricsProps> = ({ result }) => {
                   type="button"
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 disabled:opacity-40 hover:bg-slate-800"
+                  className="p-1.5 rounded-lg border border-slate-800 bg-slate-950 text-slate-300 disabled:opacity-40"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

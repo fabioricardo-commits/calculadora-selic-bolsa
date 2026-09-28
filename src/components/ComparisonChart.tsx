@@ -13,7 +13,7 @@ import {
   ChartOptions
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { LineChart, BarChart2 } from 'lucide-react';
+import { LineChart } from 'lucide-react';
 
 ChartJS.register(
   CategoryScale,
@@ -37,62 +37,66 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({ result }) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(val);
   };
 
+  // Base datasets: Total Invested & Selic
+  const datasets: any[] = [
+    {
+      label: 'Total Investido (Aportes)',
+      data: result.monthlyData.map(d => d.totalInvested),
+      borderColor: '#64748b',
+      backgroundColor: 'rgba(100, 116, 139, 0.05)',
+      borderDash: [5, 5],
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.1,
+    },
+    {
+      label: 'Tesouro Selic (Renda Fixa)',
+      data: result.monthlyData.map(d => d.selicNetBalance),
+      borderColor: '#38bdf8',
+      backgroundColor: 'rgba(56, 189, 248, 0.1)',
+      borderWidth: 3,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      fill: true,
+      tension: 0.2,
+    },
+  ];
+
+  // Combined Portfolio dataset if multiple stocks selected
+  if (result.stockResults.length > 1) {
+    datasets.push({
+      label: 'Carteira de Ações (Média)',
+      data: result.monthlyData.map(d => d.portfolioNetBalance),
+      borderColor: '#bc13fe',
+      backgroundColor: 'rgba(188, 19, 254, 0.15)',
+      borderWidth: 3,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      fill: true,
+      tension: 0.3,
+    });
+  }
+
+  // Individual stock datasets
+  result.stockResults.forEach((s) => {
+    datasets.push({
+      label: `Ação ${s.ticker}`,
+      data: result.monthlyData.map(d => d.stockBalances[s.ticker] ?? 0),
+      borderColor: s.color,
+      backgroundColor: 'transparent',
+      borderWidth: result.stockResults.length > 1 ? 1.5 : 3,
+      borderDash: result.stockResults.length > 1 ? [2, 2] : [],
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      fill: false,
+      tension: 0.3,
+    });
+  });
+
   const data = {
     labels,
-    datasets: [
-      {
-        label: 'Total Investido (Aportes)',
-        data: result.monthlyData.map(d => d.totalInvested),
-        borderColor: '#64748b', // Slate 500
-        backgroundColor: 'rgba(100, 116, 139, 0.05)',
-        borderDash: [5, 5],
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        fill: false,
-        tension: 0.1,
-      },
-      {
-        label: 'Patrimônio Selic (Renda Fixa)',
-        data: result.monthlyData.map(d => d.selicNetBalance),
-        borderColor: '#38bdf8', // Sky 400
-        backgroundColor: (context: any) => {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          if (!chartArea) return undefined;
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
-          gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-          return gradient;
-        },
-        borderWidth: 3,
-        pointRadius: (ctx: any) => (ctx.dataIndex === result.monthlyData.length - 1 ? 6 : 0),
-        pointBackgroundColor: '#38bdf8',
-        pointHoverRadius: 6,
-        fill: true,
-        tension: 0.3,
-      },
-      {
-        label: `Patrimônio Ação (${result.stockTicker})`,
-        data: result.monthlyData.map(d => d.stockNetBalance),
-        borderColor: '#c084fc', // Purple 400
-        backgroundColor: (context: any) => {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          if (!chartArea) return undefined;
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, 'rgba(192, 132, 252, 0.25)');
-          gradient.addColorStop(1, 'rgba(192, 132, 252, 0.0)');
-          return gradient;
-        },
-        borderWidth: 3,
-        pointRadius: (ctx: any) => (ctx.dataIndex === result.monthlyData.length - 1 ? 6 : 0),
-        pointBackgroundColor: '#c084fc',
-        pointHoverRadius: 6,
-        fill: true,
-        tension: 0.3,
-      },
-    ],
+    datasets,
   };
 
   const options: ChartOptions<'line'> = {
@@ -110,22 +114,21 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({ result }) => {
           color: '#94a3b8',
           font: {
             family: 'Inter',
-            size: 12,
-            weight: 500,
+            size: 11,
+            weight: 600,
           },
           usePointStyle: true,
           boxWidth: 8,
-          padding: 15,
+          padding: 12,
         },
       },
       tooltip: {
-        backgroundColor: '#0f172a',
+        backgroundColor: '#090d16',
         titleColor: '#f8fafc',
         bodyColor: '#cbd5e1',
         borderColor: '#334155',
         borderWidth: 1,
         padding: 12,
-        boxPadding: 6,
         usePointStyle: true,
         callbacks: {
           label: (context) => {
@@ -146,7 +149,6 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({ result }) => {
           font: {
             size: 11,
           },
-          maxRotation: 0,
           autoSkip: true,
           maxTicksLimit: 12,
         },
@@ -167,28 +169,16 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({ result }) => {
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl backdrop-blur-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-2xl backdrop-blur-md space-y-4">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <LineChart className="w-5 h-5 text-purple-400" />
-            Evolução do Patrimônio ao Longo do Tempo
+            Evolução do Patrimônio e Curva de Risco
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Comparação mês a mês entre Selic, {result.stockTicker} e total aportado.
+            Comparação mês a mês de Selic vs {result.stockResults.map(s => s.ticker).join(', ')}.
           </p>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 text-sky-400 font-semibold">
-            <span className="w-3 h-0.5 bg-sky-400 rounded-full"></span> Selic
-          </div>
-          <div className="flex items-center gap-1.5 text-purple-400 font-semibold">
-            <span className="w-3 h-0.5 bg-purple-400 rounded-full"></span> {result.stockTicker}
-          </div>
-          <div className="flex items-center gap-1.5 text-slate-400 font-semibold">
-            <span className="w-3 h-0.5 bg-slate-500 border-dashed border-t rounded-full"></span> Aportes
-          </div>
         </div>
       </div>
 
