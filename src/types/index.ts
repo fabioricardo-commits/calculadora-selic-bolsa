@@ -5,11 +5,11 @@ export interface StockOption {
   name: string;
   sector: string;
   color: string;
-  annualYieldEstimate?: number; // fallback estimate
+  volatilityLevel: 'Baixa' | 'Média' | 'Alta' | 'Extrema';
 }
 
 export interface SimulationInput {
-  ticker: string;
+  selectedTickers: string[]; // Multi-stock selection
   timeWindow: TimeWindow;
   initialAmount: number;
   monthlyContribution: number;
@@ -23,17 +23,28 @@ export interface MonthlyRecord {
   totalInvested: number;
   monthlyDeposit: number;
   
-  selicRateMonth: number; // monthly % e.g. 0.85%
+  selicRateMonth: number;
   selicGrossBalance: number;
-  selicGrossProfit: number;
   selicNetBalance: number;
-  
-  stockPrice: number;
-  stockMonthlyReturn: number; // % return this month
-  stockGrossBalance: number;
-  stockGrossProfit: number;
-  stockNetBalance: number;
-  accumulatedShares: number;
+
+  // Individual stock balances
+  stockBalances: Record<string, number>; // ticker -> net balance
+  portfolioNetBalance: number; // Combined equal-weighted portfolio balance
+}
+
+export interface StockResultMetric {
+  ticker: string;
+  name: string;
+  color: string;
+  grossBalance: number;
+  grossProfit: number;
+  irTax: number;
+  netBalance: number;
+  netProfit: number;
+  netReturnPercent: number;
+  cagrPercent: number;
+  multiplier: number; // e.g. 1.85x
+  maxDrawdownPercent: number;
 }
 
 export interface CalculationResult {
@@ -43,7 +54,7 @@ export interface CalculationResult {
   startDate: string;
   endDate: string;
   
-  // Selic metrics
+  // Selic metrics (The House / Banco Central)
   selicGrossBalance: number;
   selicGrossProfit: number;
   selicIrTax: number;
@@ -51,20 +62,22 @@ export interface CalculationResult {
   selicNetProfit: number;
   selicNetReturnPercent: number;
   selicCagrPercent: number;
-  
-  // Stock metrics
-  stockTicker: string;
-  stockName: string;
-  stockGrossBalance: number;
-  stockGrossProfit: number;
-  stockIrTax: number;
-  stockNetBalance: number;
-  stockNetProfit: number;
-  stockNetReturnPercent: number;
-  stockCagrPercent: number;
+  selicMultiplier: number;
+
+  // Selected stocks results
+  stockResults: StockResultMetric[];
+
+  // Aggregated Portfolio Metrics
+  portfolioNetBalance: number;
+  portfolioNetProfit: number;
+  portfolioNetReturnPercent: number;
+  portfolioCagrPercent: number;
+  portfolioMultiplier: number;
   
   // Comparative
-  winner: 'selic' | 'stock' | 'tie';
+  winner: 'selic' | 'portfolio' | string; // ticker or selic or portfolio
+  winnerName: string;
+  bestMultiplier: number;
   differenceAmount: number;
   differencePercent: number;
 
